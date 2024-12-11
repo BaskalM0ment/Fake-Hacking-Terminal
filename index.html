@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacker Command Prompt</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            color: green;
+            font-family: 'Courier New', Courier, monospace;
+            height: 100%;
+            overflow: hidden;
+            user-select: none;
+        }
+        #terminal {
+            width: 100vw;
+            height: 100vh;
+            padding: 0;
+            box-sizing: border-box;
+            overflow-y: scroll;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+        }
+        .input-line {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            position: sticky;
+            bottom: 0;
+            background-color: black;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        .prompt {
+            margin-right: 5px;
+            flex-shrink: 0;
+        }
+        .output {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding: 0 5px;
+            box-sizing: border-box;
+            flex-grow: 1;
+            width: 100%;
+        }
+        #input {
+            background: none;
+            border: none;
+            color: green;
+            outline: none;
+            width: 100%;
+            flex-grow: 1;
+        }
+        #toggle-commands-button {
+            position: fixed;
+            background-color: #333;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            z-index: 10;
+        }
+        #toggle-commands-button {
+            top: 10px;
+            right: 10px;
+        }
+        #toggle-commands-button:hover {
+            background-color: #0f0;
+            color: #333;
+        }
+        .command-list-window {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            background-color: #111;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 10px;
+            font-size: 16px;
+            max-height: 70vh;
+            overflow-y: auto;
+            display: none;
+            z-index: 10;
+            box-sizing: border-box;
+            width: 300px;
+        }
+        .command-list-window ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #reloadButton {
+            position: fixed;
+            background-color: #333;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            z-index: 10;
+            bottom: 10px;
+            right: 10px;
+        }
+        #exitButton {
+            position: absolute;
+            background-color: #333;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            z-index: 10;
+            bottom: 50px; /* Adjusted position to make it above the reload button */
+            right: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal">
+        <div class="input-line">
+            <span class="prompt">Enter your command here</span>
+            <input type="text" id="input" autofocus>
+        </div>
+    </div>
+    <button id="toggle-commands-button">Show Commands</button>
+
+    <div class="command-list-window" id="commandListWindow">
+        <strong>Available Commands:</strong>
+        <ul id="commandList"></ul>
+    </div>
+
+    <button id="reloadButton">Click To Reload Page</button>
+    <button id="exitButton">Click To Exit Page</button>
+
+    <script>
+        const terminal = document.getElementById('terminal');
+        const input = document.getElementById('input');
+        const toggleCommandsButton = document.getElementById('toggle-commands-button');
+        const commandListWindow = document.getElementById('commandListWindow');
+        const commandList = document.getElementById('commandList');
+        const reloadButton = document.getElementById('reloadButton');
+        const exitButton = document.getElementById('exitButton');
+
+        const commands = {
+            'scan': 'Scanning for vulnerabilities...',
+            'exploit': 'Exploiting target system...',
+            'malware': 'Scanning for Malware...\n[SCAN] >>> ',
+            'dos': 'Initiating DoS Attack...\n[FLOOD] >>> ',
+            'phishing': 'Launching Phishing Campaign...\n[SPOOF] >>> ',
+            'spoofing': 'Launching Spoofing Attack...\n[DISGUISE] >>> ',
+            // Additional commands
+            'decrypt': 'Decrypting file...\n[CRACK] >>> ',
+            'crack': 'Attempting password crack...\n[HASH] >>> ',
+            'dump': 'Dumping system info...\n[INFO] >>> ',
+            'spy': 'Spying on network...\n[MONITOR] >>> ',
+            'trace': 'Tracing route...\n[ROUTE] >>> ',
+            'track': 'Tracking user...\n[TRACKER] >>> ',
+            'inject': 'Injecting payload...\n[EXPLOIT] >>> ',
+            'portscan': 'Scanning ports...\n[PORT] >>> ',
+            'rootkit': 'Installing rootkit...\n[ROOT] >>> ',
+            'backdoor': 'Opening backdoor...\n[ACCESS] >>> ',
+            'steal': 'Stealing data...\n[DATA] >>> ',
+            'crash': 'Attempting system crash...\n[FATAL] >>> ',
+            'encrypt': 'Encrypting data...\n[SECURE] >>> ',
+            'phishing-mail': 'Sending phishing email...\n[EMAIL] >>> ',
+            'keylogger': 'Installing keylogger...\n[LOG] >>> ',
+            'sniff': 'Sniffing traffic...\n[MONITOR] >>> ',
+            'spam': 'Spamming user...\n[MESSAGE] >>> ',
+            'deface': 'Attempting website defacement...\n[DEFACED] >>> ',
+            'loot': 'Looting data...\n[HARVEST] >>> ',
+            'decrypt-message': 'Decrypting message...\n[DECRYPT] >>> ',
+            'analyze': 'Analyzing traffic...\n[PROBE] >>> ',
+            'sabotage': 'Sabotaging system...\n[ATTACK] >>> ',
+            'tracker': 'Tracking user location...\n[LOCATION] >>> ',
+            'bypass': 'Bypassing security...\n[ACCESS] >>> ',
+            'clone': 'Cloning data...\n[CLONE] >>> ',
+            'attack': 'Launching attack...\n[STRIKE] >>> ',
+            'scan-ports': 'Scanning open ports...\n[PORTS] >>> ',
+            'spear-phish': 'Launching spear phishing attack...\n[PHISH] >>> ',
+            'intercept': 'Intercepting traffic...\n[MESSAGE] >>> ',
+            'crack-code': 'Cracking encrypted code...\n[DECIPHER] >>> ',
+            'dump-data': 'Dumping sensitive data...\n[DATA] >>> ',
+            'spoof-dns': 'Spoofing DNS...\n[DNS] >>> ',
+            'harvest': 'Harvesting data...\n[EXTRACT] >>> ',
+            'test': 'Testing security measures...\n[SECURITY] >>> ',
+            'inject-code': 'Injecting malicious code...\n[CODE] >>> ',
+            'trace-route': 'Tracing route...\n[ROUTE] >>> ',
+            'phishing-attack': 'Launching phishing attack...\n[SPOOF] >>> '
+        };
+
+        let runningCommand = null;
+
+        const showCommands = () => {
+            commandList.innerHTML = '';
+            Object.keys(commands).forEach(command => {
+                const li = document.createElement('li');
+                li.textContent = command;
+                commandList.appendChild(li);
+            });
+            commandListWindow.classList.toggle('hidden');
+        };
+
+        const handleCommand = (command) => {
+            if (commands[command]) {
+                terminal.innerHTML += `<div class="output">${commands[command]}</div>`;
+                input.value = '';
+            } else {
+                terminal.innerHTML += `<div class="output">Unknown command: ${command}</div>`;
+                input.value = '';
+            }
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'r')) {
+                e.preventDefault();
+            }
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const command = input.value.trim();
+                if (command) {
+                    handleCommand(command);
+                }
+                e.preventDefault(); // Prevent the default form submission
+            }
+        });
+
+        toggleCommandsButton.addEventListener('click', showCommands);
+
+        reloadButton.addEventListener('click', () => {
+            location.reload();
+        });
+
+        exitButton.addEventListener('click', () => {
+            window.close();
+        });
+
+        window.addEventListener('beforeunload', (e) => {
+            e.preventDefault();
+            return false;
+        });
+    </script>
+</body>
+</html>
